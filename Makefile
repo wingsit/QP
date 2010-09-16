@@ -17,8 +17,8 @@ INCL  	= uQuadProg++.hh EigenQP.h		# List of *.h
 # Optional add #
 ################
 IPATH   = -I. -I./eigen/          # path of include file
-OBJOPT  = -O2 -Wall      # option for obj
-EXEOPT  = -O2 -Wall      # option for exe (-lefence ...)
+OBJOPT  = -O4 -Wall -msse2 -fopenmp      # option for obj
+EXEOPT  = -O4 -Wall -msse2 -fopenmp     # option for exe (-lefence ...)
 LPATH   = -L.           # path for librairies ... 
 
 #####################

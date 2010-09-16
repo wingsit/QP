@@ -16,7 +16,7 @@
   x_1 + x_2 = 3
   x_1 >= 0
   x_2 >= 0
-  x_1 + x_2 >= 2
+v  x_1 + x_2 >= 2
  
   The solution is x^T = [1 2] and f(x) = 12
  
@@ -46,7 +46,7 @@
   You should have received a copy of the GNU Lesser General Public License
   along with QuadProg++. If not, see <http://www.gnu.org/licenses/>.
 */
-
+#define DNDEBUG
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -56,64 +56,99 @@
 #include <boost/numeric/ublas/io.hpp>
 #include <Eigen/Eigen>
 #include <EigenQP.h>
+#include <boost/progress.hpp>
+
+using boost::timer;
 
 using namespace Eigen;
 namespace ublas = boost::numeric::ublas;
+using std::endl;
+using std::cout;
 
 int main (int argc, char *const argv[]) {
-  ublas::matrix<double> G, CE, CI;
-  ublas::vector<double> g0, ce0, ci0, x;
+  timer clock;
+
+
+
   int n, m, p;
+  n = 1000;
+  m = 505;
+  p = 703;
   double sum = 0.0;
   char ch;
+
+  ublas::matrix<double> G, CE, CI;
+  ublas::vector<double> g0, ce0, ci0, x;
+
+  MatrixXd eG(n,n), eCi(n, p), eCe(n, m);
+  VectorXd eg0(n), ece(m), eci(p), ex(n);
   
-  n = 2;
+
   G.resize(n, n);
   {
-    std::istringstream is("4, -2,"
-			  "-2, 4 ");
-
+    //    std::istringstream is("4, -2,"
+//			  "-2, 4 ");
+/*    
     for (int i = 0; i < n; i++)	
-      for (int j = 0; j < n; j++)
+      for (int j = 0; j < n; j++){
 	is >> G(i, j) >> ch;
+	eG(i, j) = G(i, j);
+*/
+
+    for (int i = 0; i < n; ++i)
+      for(int j = 0; j <= i; ++j){
+	eG(i, j) = G(i, j) = (i== j)? i+j+1 : pow((-1), (i+j)) * (double)i/(j+1)*(rand()/RAND_MAX);
+      }
+
+    eG = (eG.transpose() * eG).eval();
+    G = prod(trans(G) , G);
+
+     
+    //    cout << "G" << G << endl << endl << eG << endl;
   }
 	
   g0.resize(n);
   {
     std::istringstream is("6.0, 0.0 ");
 
-    for (int i = 0; i < n; i++)
-      is >> g0(i) >> ch;
+    for (int i = 0; i < n; i++){
+      eg0(i)=g0(i) = (double)rand()/RAND_MAX;
+    }
+    //    cout << "g0" << g0 << endl << endl << eg0 << endl;
   }
   
-  m = 1;
   CE.resize(n, m);
   {
-    std::istringstream is("1.0, "
-			  "1.0 ");
-
     for (int i = 0; i < n; i++)
-      for (int j = 0; j < m; j++)
-	is >> CE(i, j) >> ch;
+      for (int j = 0; j < m; j++){
+	eCe(i, j) = CE(i, j) = (double) rand()/RAND_MAX;
+      }
+    //    cout << "CE" << CE << endl << endl << eCe << endl;
+	
   } 
   
   ce0.resize(m);
   {
     std::istringstream is("-3.0 ");
 		
-    for (int j = 0; j < m; j++)
+    for (int j = 0; j < m; j++){
       is >> ce0(j) >> ch;
+      ece(j) = ce0(j);
+    }
+    //    cout << "ce" << ce0 << endl << endl << ece << endl;
   }
 	
-  p = 3;
+
   CI.resize(n, p);
   {
     std::istringstream is("1.0, 0.0, 1.0, "
 			  "0.0, 1.0, 1.0 ");
   
     for (int i = 0; i < n; i++)
-      for (int j = 0; j < p; j++)
-	is >> CI(i, j) >> ch;
+      for (int j = 0; j < p; j++){
+	eCi(i, j) = CI(i, j) = (double) (rand()) /RAND_MAX;
+      }
+    //    cout << "CI" << CI << endl << endl << eCi << endl;
   }
   
   ci0.resize(p);
@@ -121,11 +156,18 @@ int main (int argc, char *const argv[]) {
     std::istringstream is("0.0, 0.0, -2.0 ");
 
     for (int j = 0; j < p; j++)
-      is >> ci0(j) >> ch;
+      {
+	eci(j) = ci0(j) = (double) rand() / RAND_MAX;
+      }
+    //    cout << "ci" << ci0 << endl << endl << eci << endl;
   }
   x.resize(n);
 
+  clock.restart();
   std::cout << "f: " << uQuadProgPP::solve_quadprog(G, g0, CE, ce0, CI, ci0, x) << std::endl;
+  std::cout << "Elapse Time:" << clock.elapsed() << std::endl;
+ 
+
   std::cout << "x: " << x << std::endl;
   /*  for (int i = 0; i < n; i++)
       std::cout << x[i] << ' ';
@@ -151,23 +193,9 @@ int main (int argc, char *const argv[]) {
   for (int i = 0; i < n; i++)
     sum += g0(i) * x(i);
   std::cout << sum << std::endl;
-
-  MatrixXd eG(2,2), eCi(2,3);
-  VectorXd eg0(2), eCe(2), ece(1), eci(3), ex(2);
-
-  eG << 4, -2,
-    -2, 4;
-
-  eg0 << 6.0, 0.0;
-  
-  eCe << 1.0, 1.0;
-
-  ece << -3.0;
-  
-  eCi << 1, 0, 1, 0, 1, 1;
-  
-  eci << 0, 0, -2;
-
+  clock.restart();
   std::cout << QP::solve_quadprog(eG, eg0, eCe, ece, eCi, eci, ex) << std::endl;
-  std::cout << ex << std::endl;
+  std::cout << "Elapsed Time:" << clock.elapsed() << std::endl;
+  std::cout <<"Solution:" << endl <<  ex << std::endl;
+
 }
