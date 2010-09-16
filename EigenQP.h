@@ -71,8 +71,8 @@ along with QuadProg++. If not, see <http://www.gnu.org/licenses/>.
 */
 
 
-#ifndef _UQUADPROGPP
-#define _UQUADPROGPP
+#ifndef _EIGENQP
+#define _EIGENQP
 
 					   //#include <boost/numeric/ublas/vector.hpp>
 					   //#include <boost/numeric/ublas/matrix.hpp>
